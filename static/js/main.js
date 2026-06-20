@@ -20,7 +20,8 @@ const state = {
     composerText: '',        // Current text in the tweet textarea
     activePreset: 'tech',    // 'tech', 'summary', 'hype', 'minimal'
     selectedHashtags: new Set(['#BigQuery', '#GoogleCloud']),
-    isTextEdited: false      // Has the user manually edited the textarea?
+    isTextEdited: false,     // Has the user manually edited the textarea?
+    daysToShow: 10           // Number of days to initially render (lazy loading / pagination)
 };
 
 // SVG Circular Progress Ring constants
@@ -130,6 +131,7 @@ function setupEventListeners() {
             DOM.dateFilterBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.dateRange = btn.getAttribute('data-range');
+            state.daysToShow = 10;
             renderTimeline();
         });
     });
@@ -221,6 +223,7 @@ async function fetchReleaseNotes(forceRefresh = false) {
         state.releases = data.releases;
         state.stats = data.stats;
         state.lastUpdated = data.last_updated;
+        state.daysToShow = 10;
         
         // Render dashboard statistics & date filter options
         updateStatsUI();
@@ -305,6 +308,7 @@ function rebuildCategoryPills(categoriesObj) {
 // Set active category and filter feed
 function selectCategory(category) {
     state.selectedCategory = category;
+    state.daysToShow = 10;
     
     // Update pills active states
     const pills = DOM.categoryPillsList.querySelectorAll('.category-pill');
@@ -332,6 +336,7 @@ function selectCategory(category) {
 // Handle keyword searching
 function handleSearchInput() {
     state.searchQuery = DOM.searchInput.value.toLowerCase().trim();
+    state.daysToShow = 10;
     
     // Toggle search clear button visibility
     if (state.searchQuery.length > 0) {
@@ -347,6 +352,7 @@ function handleSearchInput() {
 function clearSearch() {
     DOM.searchInput.value = '';
     state.searchQuery = '';
+    state.daysToShow = 10;
     DOM.searchClearBtn.style.display = 'none';
     renderTimeline();
 }
@@ -355,6 +361,7 @@ function clearSearch() {
 function resetFilters() {
     DOM.searchInput.value = '';
     state.searchQuery = '';
+    state.daysToShow = 10;
     DOM.searchClearBtn.style.display = 'none';
     
     state.selectedCategory = 'all';
@@ -386,6 +393,7 @@ function resetFilters() {
 function toggleSorting() {
     const btn = DOM.sortOrderBtn;
     const isDesc = btn.getAttribute('data-order') === 'desc';
+    state.daysToShow = 10;
     
     if (isDesc) {
         btn.setAttribute('data-order', 'asc');
@@ -514,6 +522,7 @@ function renderTimeline() {
     DOM.timelineFeed.innerHTML = '';
     
     const displayList = getFilteredUpdates();
+    const totalDays = displayList.length;
     
     // Count total matched updates
     let filteredCount = 0;
@@ -538,8 +547,11 @@ function renderTimeline() {
     const dateRange = state.dateRange;
     DOM.clearFiltersBtn.style.display = (query || category !== 'all' || dateRange !== 'all') ? 'inline-block' : 'none';
     
+    // Slice according to lazy loading pagination bounds
+    const visibleList = displayList.slice(0, state.daysToShow);
+    
     // Construct HTML Nodes
-    displayList.forEach(dayGroup => {
+    visibleList.forEach(dayGroup => {
         const dayElement = document.createElement('article');
         dayElement.className = 'timeline-day-group';
         
@@ -548,7 +560,7 @@ function renderTimeline() {
         marker.className = 'timeline-day-marker';
         dayElement.appendChild(marker);
         
-        // Header
+        // Header (Sticky)
         const header = document.createElement('div');
         header.className = 'timeline-day-header';
         header.innerHTML = `
@@ -638,6 +650,23 @@ function renderTimeline() {
         dayElement.appendChild(listContainer);
         DOM.timelineFeed.appendChild(dayElement);
     });
+    
+    // Append Load More button container if there are more releases to show
+    if (state.daysToShow < totalDays) {
+        const loadMoreContainer = document.createElement('div');
+        loadMoreContainer.className = 'load-more-wrapper';
+        
+        const loadMoreBtn = document.createElement('button');
+        loadMoreBtn.className = 'btn btn-load-more';
+        loadMoreBtn.innerHTML = '<i class="fa-solid fa-angles-down btn-icon"></i> <span>Load More Releases</span>';
+        loadMoreBtn.addEventListener('click', () => {
+            state.daysToShow += 10;
+            renderTimeline();
+        });
+        
+        loadMoreContainer.appendChild(loadMoreBtn);
+        DOM.timelineFeed.appendChild(loadMoreContainer);
+    }
 }
 
 // Convert RSS date string to JS Date object
@@ -900,5 +929,25 @@ function toggleTheme() {
         if (icon) icon.className = 'fa-solid fa-moon theme-toggle-icon';
         localStorage.setItem('theme', 'dark');
         showToast('🌙 Dark Theme Enabled');
+    }
+}
+
+// Helper: Handle global keyboard shortcut keydown events
+function handleGlobalKeydown(e) {
+    // ESC Key - reset filters (if not focused on search input or composer textarea)
+    if (e.key === 'Escape') {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag !== 'input' && activeTag !== 'textarea') {
+            resetFilters();
+            showToast('🔄 Filters Reset');
+        }
+    }
+    
+    // Ctrl + Shift + C (Copy current tweet if selections exist)
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+        if (state.selectedUpdate && state.composerText) {
+            e.preventDefault();
+            copyTweetToClipboard();
+        }
     }
 }

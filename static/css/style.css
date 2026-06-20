@@ -82,6 +82,9 @@
     --center-db-icon-color: #ffffff;
     --composer-source-info-bg: rgba(255, 255, 255, 0.02);
     --progress-ring-bg-stroke: #333b4e;
+    
+    --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.3);
 }
 
 /* Reset and Base Styles */
@@ -111,11 +114,11 @@ body {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--scrollbar-thumb-hover);
 }
 
 /* Background Glowing Blobs */
@@ -984,7 +987,12 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 10px;
     margin-bottom: 14px;
-    padding-left: 4px;
+    padding: 8px 4px;
+    position: sticky;
+    top: 0;
+    background-color: var(--bg-base);
+    z-index: 5;
+    transition: background-color 0.3s ease;
 }
 
 .timeline-day-header h3 {
@@ -1383,9 +1391,24 @@ h1, h2, h3, h4, h5, h6 {
 
 .char-counter-wrapper.danger .progress-ring-circle {
     stroke: #ef4444;
+    animation: pulse-danger-ring 1s infinite alternate;
 }
 .char-counter-wrapper.danger .char-count {
     color: #ef4444;
+}
+.char-counter-wrapper.danger {
+    animation: shake-composer 0.4s ease-in-out;
+}
+
+@keyframes pulse-danger-ring {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; filter: drop-shadow(0 0 2px #ef4444); }
+}
+
+@keyframes shake-composer {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
 }
 
 /* Preset selection chips */
@@ -1575,6 +1598,9 @@ body.light-theme {
     --composer-source-info-bg: rgba(0, 0, 0, 0.02);
     --progress-ring-bg-stroke: #cbd5e1;
     
+    --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
+    
     --x-brand: #0f172a;
     --x-brand-bg: rgba(0, 0, 0, 0.05);
 }
@@ -1585,4 +1611,34 @@ body.light-theme .blob {
 
 body.light-theme .progress-ring-bg {
     stroke: var(--progress-ring-bg-stroke);
+}
+
+/* ==========================================================================
+   Load More Timeline Pagination Layout
+   ========================================================================== */
+.load-more-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: 32px;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 2;
+}
+
+.btn-load-more {
+    background: var(--bg-surface-glass);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(10px);
+    font-weight: 700;
+}
+
+.btn-load-more:hover {
+    border-color: var(--accent-blue);
+    background: rgba(0, 210, 255, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 210, 255, 0.1);
 }
