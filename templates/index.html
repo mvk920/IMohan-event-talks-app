@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- SEO Meta Tags -->
+    <title>BigQuery Release Notes Radar | Real-Time Tracker</title>
+    <meta name="description" content="Stay updated with the latest Google Cloud BigQuery releases, announcements, features, deprecations, and fixes in a beautiful interactive timeline. Select and tweet directly!">
+    <meta name="author" content="BigQuery Release Notes Radar">
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="dark-theme">
+    <div class="background-decorations">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Navigation Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon-wrapper">
+                    <i class="fa-solid fa-database logo-icon"></i>
+                    <div class="logo-pulse"></div>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery Release Notes <span class="accent-text">Radar</span></h1>
+                    <p class="subtitle">Real-time Feed &amp; Social Sharer</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div id="sync-status" class="sync-status-badge">
+                    <span class="pulse-dot"></span>
+                    <span id="sync-status-text">Connected</span>
+                </div>
+                <div class="last-updated-wrapper">
+                    <span class="label">Last synced:</span>
+                    <span id="last-updated-time">Never</span>
+                </div>
+                <button id="refresh-btn" class="btn btn-primary btn-refresh" aria-label="Refresh Release Notes">
+                    <i class="fa-solid fa-rotate-right btn-icon spinner-icon"></i>
+                    <span>Sync Feed</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Bar Section -->
+        <section class="stats-grid" id="stats-summary">
+            <div class="stat-card" id="stat-total-updates" data-category="all">
+                <div class="stat-icon-wrapper main-stat">
+                    <i class="fa-solid fa-list-check"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stats-total-val">0</span>
+                    <span class="stat-label">Total Updates</span>
+                </div>
+                <div class="stat-progress main-progress"></div>
+            </div>
+            <div class="stat-card filter-trigger" data-category="Feature" id="stat-features">
+                <div class="stat-icon-wrapper feat-stat">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stats-features-val">0</span>
+                    <span class="stat-label">Features</span>
+                </div>
+                <div class="stat-progress feat-progress"></div>
+            </div>
+            <div class="stat-card filter-trigger" data-category="Announcement" id="stat-announcements">
+                <div class="stat-icon-wrapper ann-stat">
+                    <i class="fa-solid fa-bullhorn"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stats-announcements-val">0</span>
+                    <span class="stat-label">Announcements</span>
+                </div>
+                <div class="stat-progress ann-progress"></div>
+            </div>
+            <div class="stat-card filter-trigger" data-category="Issue" id="stat-issues">
+                <div class="stat-icon-wrapper issue-stat">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stats-issues-val">0</span>
+                    <span class="stat-label">Issues &amp; Fixes</span>
+                </div>
+                <div class="stat-progress issue-progress"></div>
+            </div>
+            <div class="stat-card filter-trigger" data-category="Deprecated" id="stat-deprecated">
+                <div class="stat-icon-wrapper dep-stat">
+                    <i class="fa-solid fa-ban"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value" id="stats-deprecated-val">0</span>
+                    <span class="stat-label">Deprecated</span>
+                </div>
+                <div class="stat-progress dep-progress"></div>
+            </div>
+        </section>
+
+        <!-- Main Workspace Area -->
+        <main class="app-workspace">
+            
+            <!-- Left Panel: Filters & Control Panel -->
+            <aside class="sidebar-panel filters-panel">
+                <div class="panel-card">
+                    <div class="panel-header">
+                        <h2><i class="fa-solid fa-sliders"></i> Filter Feed</h2>
+                        <button id="clear-filters-btn" class="btn-text" style="display:none;">Clear all</button>
+                    </div>
+                    
+                    <div class="filter-section">
+                        <label for="search-input" class="filter-label">Search Keywords</label>
+                        <div class="search-input-wrapper">
+                            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                            <input type="text" id="search-input" placeholder="Search title or content..." aria-label="Search updates">
+                            <button id="search-clear-btn" class="search-clear-btn" style="display:none;" aria-label="Clear search">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filter-section">
+                        <label class="filter-label">Categories</label>
+                        <div class="category-pills" id="category-pills-list">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="filter-section">
+                        <label class="filter-label">Date Filter</label>
+                        <div class="date-filters">
+                            <button class="btn btn-outline active" data-range="all">All Time</button>
+                            <button class="btn btn-outline" data-range="7">Past 7 Days</button>
+                            <button class="btn btn-outline" data-range="30">Past 30 Days</button>
+                        </div>
+                    </div>
+                    
+                    <div class="feed-stats-minor">
+                        <div class="minor-stat-item">
+                            <span>Showing:</span>
+                            <span id="filtered-count-val" class="count-highlight">0</span> / <span id="total-count-val">0</span> updates
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center Panel: Timeline Feed -->
+            <section class="timeline-container">
+                <div class="feed-header">
+                    <h2><i class="fa-solid fa-route"></i> Release Timeline</h2>
+                    <div class="sort-wrapper">
+                        <span class="sort-label">Sort:</span>
+                        <button id="sort-order-btn" class="btn btn-text" data-order="desc">
+                            <span>Newest First</span>
+                            <i class="fa-solid fa-arrow-down-wide-short"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timeline Loading State -->
+                <div id="feed-loading" class="loading-state">
+                    <div class="radar-spinner">
+                        <div class="ring"></div>
+                        <div class="ring"></div>
+                        <div class="ring"></div>
+                        <i class="fa-solid fa-database center-db-icon"></i>
+                    </div>
+                    <p>Scanning BigQuery Release Feed...</p>
+                </div>
+
+                <!-- Timeline Error State -->
+                <div id="feed-error" class="error-state" style="display: none;">
+                    <i class="fa-solid fa-circle-exclamation error-icon"></i>
+                    <h3>Sync Failed</h3>
+                    <p id="error-message">Unable to fetch release notes from Google Cloud feed. Please check your connection and try again.</p>
+                    <button id="retry-btn" class="btn btn-secondary">
+                        <i class="fa-solid fa-rotate-right"></i> Retry Connection
+                    </button>
+                </div>
+
+                <!-- Timeline Empty State -->
+                <div id="feed-empty" class="empty-state" style="display: none;">
+                    <i class="fa-solid fa-compass-drafting empty-icon"></i>
+                    <h3>No Releases Found</h3>
+                    <p>No release notes match your current search query or active category filters.</p>
+                    <button id="reset-filters-btn" class="btn btn-outline">Reset Active Filters</button>
+                </div>
+
+                <!-- Actual Timeline Elements -->
+                <div id="release-timeline-feed" class="timeline-feed" style="display: none;">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </section>
+
+            <!-- Right Panel: X/Twitter Sharing Composer -->
+            <aside class="sidebar-panel composer-panel">
+                <div class="panel-card sticky-card">
+                    <div class="panel-header">
+                        <h2><i class="fa-brands fa-x-twitter"></i> Tweet Composer</h2>
+                        <span class="composer-badge">Helper</span>
+                    </div>
+
+                    <div id="composer-empty-state" class="composer-empty-state">
+                        <div class="tweet-bird-animation">
+                            <i class="fa-brands fa-x-twitter bird-icon"></i>
+                        </div>
+                        <p>Select any update from the timeline feed to load it here and share it with your network.</p>
+                    </div>
+
+                    <div id="composer-active-state" class="composer-active-state" style="display: none;">
+                        <div class="composer-source-info">
+                            <div class="source-header">
+                                <span class="badge" id="composer-badge-cat">Feature</span>
+                                <span class="date" id="composer-badge-date">June 17, 2026</span>
+                            </div>
+                            <h4 id="composer-source-summary" class="source-summary">Selected update text details go here...</h4>
+                        </div>
+
+                        <div class="composer-field-wrapper">
+                            <label for="tweet-textarea" class="filter-label">Tweet Content</label>
+                            <textarea id="tweet-textarea" maxlength="280" placeholder="What's happening?" aria-label="Compose tweet"></textarea>
+                            
+                            <div class="composer-controls">
+                                <div class="char-counter-wrapper">
+                                    <svg class="progress-ring" width="28" height="28">
+                                        <circle class="progress-ring-bg" stroke="#333b4e" stroke-width="3" fill="transparent" r="11" cx="14" cy="14"/>
+                                        <circle class="progress-ring-circle" id="char-progress-circle" stroke="#00d2ff" stroke-width="3" fill="transparent" r="11" cx="14" cy="14"/>
+                                    </svg>
+                                    <span id="char-counter-text" class="char-count">280</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Template selection -->
+                        <div class="composer-templates-section">
+                            <label class="filter-label">Style Presets</label>
+                            <div class="template-chips">
+                                <button class="chip-btn active" data-style="tech">🚀 Tech Alert</button>
+                                <button class="chip-btn" data-style="summary">📝 Quick Summary</button>
+                                <button class="chip-btn" data-style="hype">🔥 Hype/Excited</button>
+                                <button class="chip-btn" data-style="minimal">💼 Minimal</button>
+                            </div>
+                        </div>
+
+                        <!-- Hashtag library -->
+                        <div class="composer-hashtags-section">
+                            <label class="filter-label">Suggested Hashtags</label>
+                            <div class="hashtag-grid">
+                                <button class="hashtag-pill" data-hashtag="#BigQuery">#BigQuery</button>
+                                <button class="hashtag-pill" data-hashtag="#GoogleCloud">#GoogleCloud</button>
+                                <button class="hashtag-pill" data-hashtag="#DataEngineering">#DataEng</button>
+                                <button class="hashtag-pill" data-hashtag="#GCP">#GCP</button>
+                                <button class="hashtag-pill" data-hashtag="#DataAnalytics">#Analytics</button>
+                            </div>
+                        </div>
+
+                        <div class="composer-actions">
+                            <button id="copy-tweet-btn" class="btn btn-outline" aria-label="Copy tweet content">
+                                <i class="fa-regular fa-clipboard"></i>
+                                <span>Copy Text</span>
+                            </button>
+                            <button id="send-tweet-btn" class="btn btn-tweet" aria-label="Post tweet on X">
+                                <i class="fa-brands fa-x-twitter"></i>
+                                <span>Post Tweet</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </main>
+        
+        <!-- Footer -->
+        <footer class="app-footer-bar">
+            <p>Google BigQuery Release Notes Radar. Built with Flask, vanilla CSS, and JavaScript. Keep data flowing.</p>
+        </footer>
+    </div>
+
+    <!-- Script inclusion -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
