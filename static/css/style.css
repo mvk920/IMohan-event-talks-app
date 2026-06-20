@@ -1097,12 +1097,12 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--cat-change-border);
 }
 
-/* Action button items for hover */
+/* Action button items for hover and default styling */
 .update-card-actions {
     display: flex;
     align-items: center;
     gap: 8px;
-    opacity: 0.3; /* Hidden/faded by default, visible on hover */
+    opacity: 0.55; /* Discoverable by default, fully visible on hover */
     transition: opacity 0.25s ease;
 }
 

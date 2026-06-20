@@ -52,6 +52,7 @@ const DOM = {
     
     // Timeline elements
     sortOrderBtn: document.getElementById('sort-order-btn'),
+    exportCsvBtn: document.getElementById('export-csv-btn'),
     feedLoading: document.getElementById('feed-loading'),
     feedError: document.getElementById('feed-error'),
     feedEmpty: document.getElementById('feed-empty'),
@@ -125,6 +126,7 @@ function setupEventListeners() {
     
     // Sorting trigger
     DOM.sortOrderBtn.addEventListener('click', toggleSorting);
+    DOM.exportCsvBtn.addEventListener('click', exportToCSV);
     
     // Tweet composer textarea events
     DOM.tweetTextarea.addEventListener('input', handleTweetTextareaInput);
@@ -386,19 +388,12 @@ function toggleSorting() {
     renderTimeline();
 }
 
-// Render the Timeline Release Notes dynamically based on state
-function renderTimeline() {
-    DOM.timelineFeed.innerHTML = '';
-    
-    // Parse filters
+// Get currently filtered releases list based on active state
+function getFilteredUpdates() {
     const query = state.searchQuery;
     const category = state.selectedCategory;
     const dateRange = state.dateRange;
     const currentDate = new Date();
-    
-    let filteredCount = 0;
-    
-    // Filtered releases list container
     const displayList = [];
     
     state.releases.forEach(dayGroup => {
@@ -444,7 +439,6 @@ function renderTimeline() {
                 ...dayGroup,
                 updates: matchedUpdates
             });
-            filteredCount += matchedUpdates.length;
         }
     });
     
@@ -455,7 +449,64 @@ function renderTimeline() {
         return state.sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
     
-    // Show/Hide Empty states
+    return displayList;
+}
+
+// Export the filtered release notes to a CSV file
+function exportToCSV() {
+    const data = getFilteredUpdates();
+    if (data.length === 0) {
+        showToast('⚠️ No updates to export.');
+        return;
+    }
+    
+    const csvRows = [];
+    // Header
+    csvRows.push(['Date', 'Category', 'Release Update Description', 'Link']);
+    
+    data.forEach(dayGroup => {
+        dayGroup.updates.forEach(update => {
+            csvRows.push([
+                dayGroup.day,
+                update.category,
+                update.content_text,
+                dayGroup.link || ""
+            ]);
+        });
+    });
+    
+    // Convert to CSV string, double escaping quotes
+    const csvString = csvRows.map(row => 
+        row.map(value => `"${(value || '').replace(/"/g, '""')}"`).join(',')
+    ).join('\r\n');
+    
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    
+    const dateFormatted = new Date().toISOString().split('T')[0];
+    link.setAttribute("download", `bigquery_releases_${dateFormatted}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    showToast('<i class="fa-solid fa-file-csv"></i> Exported to CSV!');
+}
+
+// Render the Timeline Release Notes dynamically based on state
+function renderTimeline() {
+    DOM.timelineFeed.innerHTML = '';
+    
+    const displayList = getFilteredUpdates();
+    
+    // Count total matched updates
+    let filteredCount = 0;
+    displayList.forEach(day => {
+        filteredCount += day.updates.length;
+    });
+    
     DOM.filteredCountVal.textContent = filteredCount;
     
     if (filteredCount === 0) {
@@ -467,6 +518,10 @@ function renderTimeline() {
     
     DOM.feedEmpty.style.display = 'none';
     DOM.timelineFeed.style.display = 'flex';
+    
+    const query = state.searchQuery;
+    const category = state.selectedCategory;
+    const dateRange = state.dateRange;
     DOM.clearFiltersBtn.style.display = (query || category !== 'all' || dateRange !== 'all') ? 'inline-block' : 'none';
     
     // Construct HTML Nodes
