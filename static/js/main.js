@@ -74,11 +74,22 @@ const DOM = {
     presetBtns: document.querySelectorAll('.template-chips button'),
     hashtagBtns: document.querySelectorAll('.hashtag-pill'),
     copyTweetBtn: document.getElementById('copy-tweet-btn'),
-    sendTweetBtn: document.getElementById('send-tweet-btn')
+    sendTweetBtn: document.getElementById('send-tweet-btn'),
+    themeToggleBtn: document.getElementById('theme-toggle-btn')
 };
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', () => {
+    // Check saved theme from localStorage
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        const btn = document.getElementById('theme-toggle-btn');
+        if (btn) {
+            const icon = btn.querySelector('i');
+            if (icon) icon.className = 'fa-solid fa-sun theme-toggle-icon';
+        }
+    }
     setupEventListeners();
     fetchReleaseNotes(false);
 });
@@ -88,6 +99,9 @@ function setupEventListeners() {
     // Refresh button click
     DOM.refreshBtn.addEventListener('click', () => fetchReleaseNotes(true));
     DOM.retryBtn.addEventListener('click', () => fetchReleaseNotes(true));
+    
+    // Theme toggle click
+    DOM.themeToggleBtn.addEventListener('click', toggleTheme);
     
     // Search event
     DOM.searchInput.addEventListener('input', handleSearchInput);
@@ -871,4 +885,20 @@ function truncateString(str, num) {
         return `${sub.slice(0, lastSpace).trim()}...`;
     }
     return `${sub.trim()}...`;
+}
+
+// Helper: Toggle theme color scheme
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-theme');
+    const icon = DOM.themeToggleBtn.querySelector('i');
+    
+    if (isLight) {
+        if (icon) icon.className = 'fa-solid fa-sun theme-toggle-icon';
+        localStorage.setItem('theme', 'light');
+        showToast('☀️ Light Theme Enabled');
+    } else {
+        if (icon) icon.className = 'fa-solid fa-moon theme-toggle-icon';
+        localStorage.setItem('theme', 'dark');
+        showToast('🌙 Dark Theme Enabled');
+    }
 }
